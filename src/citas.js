@@ -128,7 +128,16 @@ export function reservar(agenda, { oficinaId, tramiteId, fecha, hora, dni }, aho
  *     (ISO de `ahora`) y se devuelve la cita. La franja vuelve a quedar libre.
  */
 export function cancelar(agenda, localizador, ahora = new Date()) {
-  throw new ErrorCita("NO_IMPLEMENTADO", "Cancelar cita todavía no está implementado (LAB 1)");
+  const cita = agenda.citas.find(c => c.localizador === localizador);
+  if (!cita) throw new ErrorCita("CITA_NO_ENCONTRADA", `No existe la cita ${localizador}`);
+  if (cita.estado !== "activa") throw new ErrorCita("CITA_NO_ACTIVA", "La cita ya no está activa");
+  const horasQueFaltan = (momentoDeCita(cita.fecha, cita.hora) - ahora) / 3_600_000;
+  if (horasQueFaltan < ANTELACION_MIN_CANCELACION_H) {
+    throw new ErrorCita("FUERA_DE_PLAZO", `Solo se puede cancelar con ${ANTELACION_MIN_CANCELACION_H} h de antelación`);
+  }
+  cita.estado = "cancelada";
+  cita.canceladaEn = ahora.toISOString();
+  return cita;
 }
 
 /** Resumen para operación (historia de operaciones HO-01 del LAB 1). */
